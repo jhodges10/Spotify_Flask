@@ -10,9 +10,11 @@ import base64
 import urllib
 from flask import request
 
+import urllib.parse
+
 # Client Keys
-CLIENT_ID = "<FILL IN YOUR CLIENT ID>"
-CLIENT_SECRET = "<FILL IN YOUR CLIENT SECRET>"
+CLIENT_ID = "1ce0eec986fe4b3f8669b9c654cfd7a7"
+CLIENT_SECRET = "26b0bc53c7de40089075b8e9ccac3e09"
 
 #Spotify URLS
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -40,11 +42,11 @@ def app_Authorization():
         # "show_dialog": SHOW_DIALOG_str,
         "client_id": CLIENT_ID
     }
-    url_args = "&".join(["{}={}".format(key,urllib.quote(val)) for key,val in auth_query_parameters.iteritems()])
+    url_args = "&".join(["{}={}".format(key,urllib.parse.quote(val)) for key,val in auth_query_parameters.items()])
     auth_url = "{}/?{}".format(SPOTIFY_AUTH_URL, url_args)
     return auth_url
 
-#User allows us to acces there spotify
+#User allows us to acces their spotify
 def user_Authorization():
     auth_token = request.args['code']
     code_payload = {
@@ -52,12 +54,17 @@ def user_Authorization():
         "code": str(auth_token),
         "redirect_uri": REDIRECT_URI
     }
-    base64encoded = base64.b64encode("{}:{}".format(CLIENT_ID, CLIENT_SECRET))
+    base64encoded = base64.b64encode("{}:{}".format(CLIENT_ID, CLIENT_SECRET).encode())
     headers = {"Authorization": "Basic {}".format(base64encoded)}
-    post_request = requests.post(SPOTIFY_TOKEN_URL, data=code_payload, headers=headers)
+
+    print(code_payload)
+    print(headers)
+
+    post_request = requests.post(SPOTIFY_TOKEN_URL, data=code_payload, auth=(CLIENT_ID, CLIENT_SECRET))
 
     # Tokens are Returned to Application
     response_data = json.loads(post_request.text)
+    print(response_data)
     access_token = response_data["access_token"]
     refresh_token = response_data["refresh_token"]
     token_type = response_data["token_type"]
